@@ -1,0 +1,94 @@
+{% load staticfiles %}
+{% load widget_tweaks %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <link rel="icon" href="{% static 'vote/images/evoting2.jpg' %}"/>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{% static 'vote/css/bootstrap.min.css' %}"/>
+    <!-- Fontawesome CSS -->
+    <link rel="stylesheet" href="{% static 'vote/css/all.min.css' %}"/>
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'vote/css/style.css' %}"/>
+
+    {% block stylesheet %}{% endblock %}
+
+    <title>{% block title %}{% endblock %}</title>
+</head>
+<body>
+{% block header %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="{% url 'vote:home' %}">Vote électronique sécurisé</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item active">
+                    <a class="nav-link" href="{% url 'vote:home' %}"><i class="fas fa-home"></i> Acceuil <span
+                            class="sr-only">(current)</span></a>
+                </li>
+                {% if not user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'vote:login' %}" tabindex="-1" aria-disabled="true">
+                            <i class="fas fa-sign-in-alt"></i> Se connecter
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'vote:profile' %}" tabindex="-1" aria-disabled="true">
+                            <i class="fas fa-user-circle"></i> {{ user.first_name }} {{ user.last_name }}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <form method="POST" action="{% url 'vote:logout' %}" id="logoutForm">
+                            {% csrf_token %}
+                            <a class="nav-link" style="cursor: pointer;" onclick="document.getElementById('logoutForm').submit()" tabindex="-1" aria-disabled="true"><i
+                                    class="fas fa-sign-out-alt"></i>
+                                Se déconnecter
+                            </a>
+                        </form>
+                    </li>
+                {% endif %}
+            </ul>
+            <form class="form-inline my-2 my-lg-0">
+                {% render_field search_form.search value=request.GET.search %}
+                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Rechercher</button>
+            </form>
+        </div>
+    </nav>
+{% endblock %}
+
+
+<div class="container-fluid">
+
+    <!-- @Block content -->
+    {% block content %}
+
+        <h1>Hello, world!</h1>
+
+    {% endblock %}
+
+    <!-- @Footer content -->
+    {% block footer %}{% endblock %}
+
+</div>
+
+{% block js %}
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="{% static 'vote/js/jquery.min.js' %}"></script>
+    <script src="{% static 'vote/js/popper.min.js' %}"></script>
+    <script src="{% static 'vote/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'vote/js/all.min.js' %}"></script>
+    <script src="{% static 'vote/js/custom.js' %}"></script>
+{% endblock %}
+</body>
+</html>
