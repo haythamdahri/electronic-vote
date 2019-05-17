@@ -231,8 +231,11 @@ class TransferVote(LoginRequiredMixin, View):
             pending = Pending.objects.filter(pk=pending_id)
             if pending.exists():
                 pending = pending[0]
-                voter, candidate = utils.decrypt_pending(pending)
-                messages.success(request, "Le vote est marqué avec succé!")
+                voter = utils.decrypt_pending(pending)
+                if voter is not None:
+                    messages.success(request, "Le vote est marqué avec succé!")
+                    return redirect("vote:manage_votes")
+                messages.error(request, "Le vote est non valide!")
                 return redirect("vote:manage_votes")
             messages.error(request, "Vote inexistant!")
             return redirect("vote:manage_votes")

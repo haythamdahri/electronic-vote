@@ -85,9 +85,9 @@ class Pending(models.Model):
     # Sent to CO from the voter
     co_file = models.FileField(null=False)
     # Sent to DO from the voter
-    do_file = models.FileField(null=False)
+    do_file = models.FileField(null=False, blank=True)
     date = models.DateTimeField(default=now)
-    done = models.BooleanField(default=False)
+    done = models.BooleanField(default=False, null=True, blank=True)
     signature = models.ForeignKey(Signature, on_delete=models.CASCADE)
 
     def __str__(self):
@@ -98,12 +98,13 @@ class Pending(models.Model):
 class Revision(models.Model):
     pending = models.ForeignKey(Pending, on_delete=models.CASCADE)
     # Sent to DO from CO
-    do_file = models.FileField(null=False)
+    do_file = models.FileField(null=False, blank=True)
     date = models.DateTimeField(default=now)
-    done = models.BooleanField(default=False)
+    done = models.BooleanField(default=False, null=True, blank=True)
+    is_valid = models.BooleanField(default=None, null=True, blank=True)
 
     def __str__(self):
-        return "Co file: " + self.co_file.name + " | Date: " + self.date.__str__() \
+        return "Co file: " + self.do_file.name + " | Date: " + self.date.__str__() \
                + " | Done: " + str(self.done)
 
 
@@ -115,4 +116,4 @@ class Vote(models.Model):
     is_valid = models.BooleanField(default=False, null=True)
 
     def __str__(self):
-        return self.voter.public_key + " | " + self.candidate.user.username + " | " + str(self.vote_date)
+        return self.voter.public_key.name + " | " + self.candidate.user.username + " | " + str(self.vote_date)

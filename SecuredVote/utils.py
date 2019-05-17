@@ -1,4 +1,6 @@
+import codecs
 import os
+import re
 import time
 
 from cryptography.exceptions import InvalidSignature
@@ -8,7 +10,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from django.core.files import File
 
 from ElectronicVote.settings import BASE_DIR
-from SecuredVote.models import Signature
+from SecuredVote.models import Signature, Revision, Vote, Voter
 
 
 def generate_keys(voter):
@@ -150,8 +152,13 @@ def encrypt_data(voter, candidate):
     )
 
     # Write encrypted data into co_file and do_file too
-    co_file.write(str.encode(str(co_voter_identifier_ciphertext) + "\n" + str(voting_bulletin_ciphertext)))
-    do_file.write(str.encode(str(do_voter_identifier_ciphertext) + "\n" + str(voting_bulletin_ciphertext)))
+    co_file.write(str.encode(str(co_voter_identifier_ciphertext)))
+    co_file.write(str.encode("\n"))
+    co_file.write(str.encode(str(voting_bulletin_ciphertext)))
+
+    do_file.write(str.encode(str(do_voter_identifier_ciphertext)))
+    co_file.write(str.encode("\n"))
+    do_file.write(str.encode(str(voting_bulletin_ciphertext)))
 
     # Sign the message with voter private key
     message = str.encode(f"Message: {voter} | time: {time.time()}")
@@ -210,11 +217,57 @@ def verify_signature(signature):
         return False
 
 def decrypt_pending(pending):
-    # Decrypt pending
+    try:
+        # Decrypt pending
+        # Extract private and public key of co and do
+        with open(os.path.join(BASE_DIR) + "/privacy/" + "co_public_key.pem", "rb") as key_file:
+            co_public_key = serialization.load_pem_public_key(
+                key_file.read(),
+                backend=default_backend()
+            )
 
-    # Create new revision after decryption
+        with open(os.path.join(BASE_DIR) + "/privacy/" + "co_private_key.pem", "rb") as key_file:
+            co_private_key = serialization.load_pem_private_key(
+                key_file.read(),
+                password=None,
+                backend=default_backend()
+            )
 
-    # Mark pending as done
+        # co_file (Clair text separated with \n)
+        co_file = open(pending.co_file.path, "rb")
+        voter_id_ciphertext = co_file.readline().decode('unicode-escape').strip()[2:-1].encode('ISO-8859-1')
 
+        # Get voter id
+        voter_id = co_private_key.decrypt(
+            voter_id_ciphertext,
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
 
-    return True, True
+        # Retrieve vote from vode_id
+        voter = Voter.objects.filter(id=voter_id)
+        if voter.exists():
+            voter = voter[0]
+            voter.is_voted = True
+            voter.save()
+        else:
+            return None
+
+        # Create new revision after decryption
+        revision = Revision.objects.create(pending=pending, do_file=pending.do_file)
+        revision.save()
+
+        # Mark pending as done
+        pending.done = True
+        pending.save()
+
+        return voter
+    except Exception as e:
+        print(e)
+        pending.done = True
+        pending.is_valid = False
+        pending.save()
+        return None
