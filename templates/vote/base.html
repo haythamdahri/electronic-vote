@@ -47,7 +47,7 @@
                 {% else %}
                     {% if user.is_staff and not user.is_superuser %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'vote:profile' %}" tabindex="-1" aria-disabled="true">
+                            <a class="nav-link" href="{% url 'vote:manage_votes' %}" tabindex="-1" aria-disabled="true">
                                 <i class="fas fa-tasks"></i> Gérer les votes
                             </a>
                         </li>

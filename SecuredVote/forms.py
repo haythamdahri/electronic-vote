@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 
 class SearchForm(forms.Form):
     search = forms.CharField(max_length=255, empty_value=False, widget=forms.TextInput(
-        attrs={'class': 'form-control mr-sm-2', 'placeholder': 'Chercher un candidat...', 'aria-label': 'Search',
+        attrs={'class': 'form-control mr-sm-2', 'placeholder': 'Chercher ...', 'aria-label': 'Search',
                'type': 'search'}))
 
 class LoginForm(forms.ModelForm):

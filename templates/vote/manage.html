@@ -1,0 +1,136 @@
+{% extends 'vote/base.html' %}
+{% load staticfiles %}
+
+{% block title %}Acceuil{% endblock %}
+
+
+{% block content %}
+
+    {% include 'vote/messages.html' %}
+
+    <table align="center" class="table table-striped table-dark table-hover">
+        <thead>
+        <tr align="center">
+            <th scope="col"><i class="fas fa-sort-numeric-up"></i> #</th>
+            <th scope="col"><i class="fas fa-shield-alt"></i> Cryptage du centre de comptage CO</th>
+            <th scope="col"><i class="fas fa-shield-alt"></i> Cryptage du centre de dépouillement DE</th>
+            <th scope="col"><i class="fas fa-file-signature"></i> Signature</th>
+            <th scope="col"><i class="far fa-calendar-alt"></i> Date</th>
+            <th scope="col">Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for pending in pendings.object_list %}
+            <tr align="center">
+                <th scope="row">{{ pending.pk }}</th>
+                <td>{{ pending.co_file.name }}</td>
+                <td>{{ pending.do_file.name }}</td>
+                <td>{{ pending.signature.sig.name }}</td>
+                <td>{{ pending.date }}</td>
+                <td>
+                    {% if pending.signature.is_valid is None %}
+                        <form method="POST" action="{% url 'vote:verify_signature' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="signature_id" value="{{ pending.signature.pk }}"/>
+                            <button class="btn btn-success btn-sm"><i class="fas fa-person-booth"></i> Verifier la
+                                signature
+                            </button>
+                        </form>
+                    {% elif not pending.signature.is_valid %}
+                        <span class="badge badge-danger">La signature est invalide!</span>
+                    {% else %}
+                        <span class="badge badge-success">La signature est valide!</span>
+                        <form method="POST" action="{% url 'vote:decrypt_vote' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="pending_id" value="{{ pending.pk }}"/>
+                            <button class="btn btn-success btn-sm"><i class="fas fa-person-booth"></i>
+                                <i class="fas fa-random"></i> Décrypter et transferer le vote
+                            </button>
+                        </form>
+
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="9" class="alert alert-warning text-center font-weight-bold">
+                    <i class="fas fa-info-circle"></i> Aucun vote n'a été ajouté!
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+
+    {% if pendings.has_other_pages %}
+        <nav aria-label="...">
+            <ul class="pagination justify-content-center">
+                {% if pendings.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="{% url 'vote:manage_votes' %}?page=1{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}"
+                           tabindex="-1" aria-disabled="true"><<</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link"
+                           href="{% url 'vote:manage_votes' %}?page=
+
+
+                                   {{ pendings.previous_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}"
+                           tabindex="-1" aria-disabled="true">Précedent</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" tabindex="-1" aria-disabled="true"><<</a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link" tabindex="-1" aria-disabled="true">Précedent</a>
+                    </li>
+                {% endif %}
+
+                {% for page_num in manage_votes.paginator.page_range %}
+                    {% if pendings.number == page_num %}
+                        <li class="page-item active" aria-current="page">
+                            <a class="page-link"
+                               href="{% url 'vote:manage_votes' %}?page=
+
+
+                                       {{ page_num }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">{{ page_num }}
+                                <span class="sr-only">(current)</span></a>
+                        </li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link"
+                                                 href="{% url 'vote:manage_votes' %}?page=
+
+
+                                                         {{ page_num }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">{{ page_num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if candidates.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{% url 'vote:manage_votes' %}?page=
+
+
+                                {{ pendings.next_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">Suivant</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="{% url 'vote:manage_votes' %}?page=
+
+
+                                {{ pendings.paginator.num_pages }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">>></a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link">Suivant</a>
+                    </li>
+                    <li class="page-item disabled">
+                        <a class="page-link">>></a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+
+
+{% endblock %}

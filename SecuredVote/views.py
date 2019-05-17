@@ -15,7 +15,7 @@ from ElectronicVote.settings import BASE_DIR
 from SecuredVote import utils
 from SecuredVote.forms import LoginForm
 # --------------- Home ---------------
-from SecuredVote.models import Candidate, Vote, Voter, Pending
+from SecuredVote.models import Candidate, Vote, Voter, Pending, Signature
 
 
 class Home(View):
@@ -33,7 +33,7 @@ class Home(View):
         candidates = candidates.annotate(count=Count("vote__id")).order_by("-count")
 
         # Pagination
-        paginator = Paginator(candidates, 2)  # Show 25 contacts per page
+        paginator = Paginator(candidates, 2)  # Show 2 candidates per page (Temprory until having a good number of candidates)
         page = request.GET.get("page")
         candidates = paginator.get_page(page)
         context["candidates"] = candidates
@@ -111,27 +111,39 @@ class MakeVote(LoginRequiredMixin, View):
         try:
             candidate = Candidate.objects.filter(id=request.POST.get("candidate_id"))
             if candidate.exists():
-                if not Vote.objects.filter(voter__user=request.user).exists():
+                if not Vote.objects.filter(voter__user=request.user).exists() and Voter.objects.filter(user=request.user).exists() and not Voter.objects.get(user=request.user).is_voted:
                     candidate = candidate[0]
-                    voter = Voter.objects.get(user=request.user)
-                    pending = Pending.objects.create()
-                    file = open(os.path.join(BASE_DIR) + "/media/" + "data.txt", "w+")
+                    voter = Voter.objects.get_or_create(user=request.user)[0]
+
                     # encrypt voter id with user private key
                     # encrypt candidate id (Bulletin du vote) with DE public key(Only DE who can decrypt Voting results)
                     # encrypt files with user private key
                     # sign co_file and do_file for authentication
-                    file.write(str(voter.pk) + "\n" + str(candidate.pk))
+                    co_file, do_file, signature = utils.encrypt_data(voter, candidate)
+
+                    # Create a new pending vote even if the user has already voted
+                    # The last vote is only the one which will be decrypted and used for operation process
+                    pending = Pending.objects.create(signature=signature)
 
                     # Remove the file if exists to prevent space management problems
-                    if os.path.exists(os.path.join(BASE_DIR) + "/media/" + voter.user.username + '_co_file.txt'):
-                        os.remove(os.path.join(BASE_DIR) + "/media/" + voter.user.username + '_co_file.txt')
-                    if os.path.exists(os.path.join(BASE_DIR) + "/media/" + voter.user.username + '_do_file.txt'):
-                        os.remove(os.path.join(BASE_DIR) + "/media/" + voter.user.username + '_do_file.txt')
+                    if os.path.exists(os.path.join(BASE_DIR) + "/media/" + voter.user.username + '_co_file.encrypt'):
+                        os.remove(os.path.join(BASE_DIR) + "/media/" + voter.user.username + '_co_file.encrypt')
+                    if os.path.exists(os.path.join(BASE_DIR) + "/media/" + voter.user.username + '_do_file.encrypt'):
+                        os.remove(os.path.join(BASE_DIR) + "/media/" + voter.user.username + '_do_file.encrypt')
 
-                    pending.co_file.save(voter.user.username + '_co_file.txt', File(file), save=True)
-                    pending.do_file.save(voter.user.username + '_do_file.txt', File(file), save=True)
-                    file.close()
+                    # Save co and do files on pending recored
+                    # Set the associated signature
+                    pending.co_file.save(voter.user.username + '_co_file.encrypt', File(co_file), save=True)
+                    pending.do_file.save(voter.user.username + '_do_file.encrypt', File(do_file), save=True)
+                    co_file.close()
+                    do_file.close()
                     pending.save()
+
+                    # Park the voter as voted
+                    voter.is_voted = True
+                    voter.save()
+
+
                     messages.success(request, "Votre vote est ajouté avec succé!")
                     messages.success(request,
                                      "Votre vote sera pris en charge aussitôt qu'il sera verifié par les autorités!")
@@ -141,5 +153,102 @@ class MakeVote(LoginRequiredMixin, View):
                 messages.warning(request, "Candidat non trouvé!")
         except Exception as ex:
             print(ex)
+            # Delete the lest created pending if exists
+            try:
+                Pending.objects.last().delete()
+            except:
+                pass
             messages.error(request, "Une erreur est survenue, veuillez ressayer!")
         return redirect("vote:home")
+
+# --------------- Manage Votes ---------------
+class Manage(LoginRequiredMixin, View):
+    login_url = "/login/"
+    redirect_field_name = "next"
+
+    def get(self, request, *args, **kwargs):
+        context = dict()
+        user = request.user
+        if not user.is_superuser and user.is_staff:
+            search = request.GET.get("search" or None)
+            if search is not None:
+                try:
+                    pendings = Pending.objects.filter(id=search)
+                except:
+                    pendings = []
+            else:
+                pendings = Pending.objects.all()
+            # Pagination
+            paginator = Paginator(pendings, 2)  # Show 2 pending votes per page
+            page = request.GET.get("page")
+            pendings = paginator.get_page(page)
+            context["pendings"] = pendings
+            return render(request, "vote/manage.html", context)
+        messages.info(request, "Vous êtes membre du centre de dépouillement!")
+        return redirect("vote:home")
+
+
+# --------------- Verify Signature Votes ---------------
+class VerifySignature(LoginRequiredMixin, View):
+    login_url = "/login/"
+    redirect_field_name = "next"
+
+    def get(self, request, *args, **kwargs):
+        return redirect("vote:manage_votes")
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        if not user.is_superuser and user.is_staff:
+            signature_id = request.POST.get('signature_id' or None)
+            if signature_id is not None:
+                signature = Signature.objects.filter(id=signature_id)
+                if signature.exists():
+                    signature = signature[0]
+
+                    # Verify signature using utils
+                    if utils.verify_signature(signature):
+                        messages.success(request, "Signature est verifié avec succé")
+                        return redirect("vote:manage_votes")
+
+            messages.error(request, "Signature non valide!")
+            return redirect("vote:manage_votes")
+        messages.info(request, "Vous êtes membre du centre de dépouillement!")
+        return redirect("vote:home")
+
+
+# --------------- Mark And Transfer Vote ---------------
+class TransferVote(LoginRequiredMixin, View):
+    login_url = "/login/"
+    redirect_field_name = "next"
+
+    def get(self, request, *args, **kwargs):
+        return redirect("vote:manage_votes")
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        if not user.is_superuser and user.is_staff:
+            pending_id = request.POST.get('pending_id')
+            pending = Pending.objects.filter(pk=pending_id)
+            if pending.exists():
+                pending = pending[0]
+                voter, candidate = utils.decrypt_pending(pending)
+                messages.success(request, "Le vote est marqué avec succé!")
+                return redirect("vote:manage_votes")
+            messages.error(request, "Vote inexistant!")
+            return redirect("vote:manage_votes")
+        messages.info(request, "Vous êtes membre du centre de dépouillement!")
+        return redirect("vote:home")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
