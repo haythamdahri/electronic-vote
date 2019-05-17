@@ -23,7 +23,10 @@
 <body>
 {% block header %}
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="{% url 'vote:home' %}">Vote électronique sécurisé</a>
+        <a class="navbar-brand" href="{% url 'vote:home' %}">
+            <img style="border-radius: 100%" src="{% static 'vote/images/evoting2.jpg' %}" width="30" height="30" alt="">
+            Vote électronique sécurisé
+        </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
                 aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -42,6 +45,21 @@
                         </a>
                     </li>
                 {% else %}
+                    {% if user.is_staff and not user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'vote:profile' %}" tabindex="-1" aria-disabled="true">
+                                <i class="fas fa-tasks"></i> Gérer les votes
+                            </a>
+                        </li>
+                    {% elif user.is_superuser %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'vote:profile' %}" tabindex="-1" aria-disabled="true">
+                                <i class="fas fa-tasks"></i> Compter les votes
+                            </a>
+                        </li>
+                    {% endif %}
+
+
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'vote:profile' %}" tabindex="-1" aria-disabled="true">
                             <i class="fas fa-user-circle"></i> {{ user.first_name }} {{ user.last_name }}
@@ -50,12 +68,15 @@
                     <li class="nav-item">
                         <form method="POST" action="{% url 'vote:logout' %}" id="logoutForm">
                             {% csrf_token %}
-                            <a class="nav-link" style="cursor: pointer;" onclick="document.getElementById('logoutForm').submit()" tabindex="-1" aria-disabled="true"><i
+                            <a class="nav-link" style="cursor: pointer;"
+                               onclick="document.getElementById('logoutForm').submit()" tabindex="-1"
+                               aria-disabled="true"><i
                                     class="fas fa-sign-out-alt"></i>
                                 Se déconnecter
                             </a>
                         </form>
                     </li>
+
                 {% endif %}
             </ul>
             <form class="form-inline my-2 my-lg-0">

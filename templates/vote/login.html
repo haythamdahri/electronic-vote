@@ -8,6 +8,9 @@
     <h3 class="text-center mt-3">CONNEXION</h3>
 
     <form method="POST" action="{% url 'vote:login' %}" class="w-50 mr-auto ml-auto">
+
+        {% include 'vote/messages.html' %}
+
         {% csrf_token %}
         <div class="form-group">
             <label for="exampleInputEmail1">Adresse Email</label>
@@ -43,6 +46,6 @@
             </div>
         {% endif %}
 
-        <button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Se connecter</button>
     </form>
 {% endblock %}

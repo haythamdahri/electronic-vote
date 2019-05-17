@@ -28,7 +28,21 @@
             <th scope="row">Email</th>
             <td>{{ user.email }}</td>
         </tr>
+        <tr>
+            <th scope="row">Date de naissance</th>
+            <td>{{ voter.birth_date }}</td>
+        </tr>
+        <tr>
+            <th scope="row">Clé publique</th>
+            <td><button class="btn btn-info btn-sm" data-toggle="modal" data-target="#publicKeyModal"><i class="far fa-eye"></i> Voir</button></td>
+        </tr>
+        <tr>
+            <th scope="row">Clé privée</th>
+            <td><button class="btn btn-dark btn-sm" data-toggle="modal" data-target="#privateKeyModal"><i class="far fa-eye"></i> Voir</button></td>
+        </tr>
         </tbody>
     </table>
+
+{% include 'vote/common/keys-modals.html' %}
 
 {% endblock %}
