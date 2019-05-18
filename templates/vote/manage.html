@@ -8,7 +8,8 @@
 
     {% include 'vote/messages.html' %}
 
-    <table align="center" class="table table-striped table-dark table-hover">
+    <div class="table-responsive">
+        <table align="center" class="table table-striped table-dark table-hover">
         <thead>
         <tr align="center">
             <th scope="col"><i class="fas fa-sort-numeric-up"></i> #</th>
@@ -82,6 +83,7 @@
         {% endfor %}
         </tbody>
     </table>
+    </div>
 
     {% if pendings.has_other_pages %}
         <nav aria-label="...">
