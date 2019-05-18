@@ -37,6 +37,9 @@
                     <form method="POST" action="{% url 'vote:make_vote' %}">
                         {% csrf_token %}
                         <input type="hidden" name="candidate_id" value="{{ candidate.pk }}"/>
+                        {% if request.GET.page is not None %}
+                            <input type="hidden" name="page" value="{{ request.GET.page }}"/>
+                        {% endif %}
                         <button class="btn btn-success btn-sm"><i class="fas fa-person-booth"></i> Voter</button>
                     </form>
                 </td>
@@ -62,7 +65,8 @@
                     </li>
                     <li class="page-item">
                         <a class="page-link"
-                           href="{% url 'vote:home' %}?page={{ candidates.previous_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}"
+                           href="{% url 'vote:home' %}?page=
+                                   {{ candidates.previous_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}"
                            tabindex="-1" aria-disabled="true">Précedent</a>
                     </li>
                 {% else %}
@@ -78,8 +82,7 @@
                     {% if candidates.number == page_num %}
                         <li class="page-item active" aria-current="page">
                             <a class="page-link"
-                               href="{% url 'vote:home' %}?page=
-                                       {{ page_num }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">{{ page_num }}
+                               href="{% url 'vote:home' %}?page={{ page_num }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">{{ page_num }}
                                 <span class="sr-only">(current)</span></a>
                         </li>
                     {% else %}

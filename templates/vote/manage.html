@@ -44,7 +44,7 @@
                     {% if pending.signature.is_valid is None %}
                         <form method="POST" action="{% url 'vote:verify_signature' %}">
                             {% csrf_token %}
-                            <input type="hidden" name="next" value="{% url 'vote:votes_management' %}">
+                            <input type="hidden" name="next" value="{% url 'vote:votes_management' %}{% if request.GET.page is not None %}?page={{ request.GET.page }}{% endif %}">
                             <input type="hidden" name="signature_id" value="{{ pending.signature.pk }}"/>
                             <button class="btn btn-success btn-sm"><i class="fas fa-person-booth"></i> Verifier la
                                 signature
@@ -57,6 +57,9 @@
                         <form method="POST" action="{% url 'vote:decrypt_vote' %}">
                             {% csrf_token %}
                             <input type="hidden" name="pending_id" value="{{ pending.pk }}"/>
+                            {% if request.GET.page is not None %}
+                                <input type="hidden" name="page" value="{{ request.GET.page }}"/>
+                            {% endif %}
                             <button class="btn btn-success btn-sm"><i class="fas fa-person-booth"></i>
                                 <i class="fas fa-random"></i> Décrypter et transferer le vote
                             </button>
@@ -91,8 +94,7 @@
                     </li>
                     <li class="page-item">
                         <a class="page-link"
-                           href="{% url 'vote:votes_management' %}?page=
-                                   {{ pendings.previous_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}"
+                           href="{% url 'vote:votes_management' %}?page={{ pendings.previous_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}"
                            tabindex="-1" aria-disabled="true">Précedent</a>
                     </li>
                 {% else %}
@@ -108,26 +110,22 @@
                     {% if pendings.number == page_num %}
                         <li class="page-item active" aria-current="page">
                             <a class="page-link"
-                               href="{% url 'vote:votes_management' %}?page=
-                                       {{ page_num }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">{{ page_num }}
+                               href="{% url 'vote:votes_management' %}?page={{ page_num }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">{{ page_num }}
                                 <span class="sr-only">(current)</span></a>
                         </li>
                     {% else %}
                         <li class="page-item"><a class="page-link"
-                                                 href="{% url 'vote:votes_management' %}?page=
-                                                         {{ page_num }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">{{ page_num }}</a>
+                                                 href="{% url 'vote:votes_management' %}?page={{ page_num }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">{{ page_num }}</a>
                         </li>
                     {% endif %}
                 {% endfor %}
 
-                {% if candidates.has_next %}
+                {% if pendings.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="{% url 'vote:votes_management' %}?page=
-                                {{ pendings.next_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">Suivant</a>
+                        <a class="page-link" href="{% url 'vote:votes_management' %}?page={{ pendings.next_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">Suivant</a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="{% url 'vote:votes_management' %}?page=
-                                {{ pendings.paginator.num_pages }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">>></a>
+                        <a class="page-link" href="{% url 'vote:votes_management' %}?page={{ pendings.paginator.num_pages }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">>></a>
                     </li>
                 {% else %}
                     <li class="page-item disabled">

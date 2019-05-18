@@ -7,6 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files import File
 from django.core.paginator import Paginator
 from django.db.models import Q, Count
+from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
@@ -108,6 +109,10 @@ class MakeVote(LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         context = dict()
+        page = request.POST.get('page' or None)
+        url = reverse("vote:home")
+        if page is not None:
+            url += f"?page={page}"
         try:
             candidate = Candidate.objects.filter(id=request.POST.get("candidate_id"))
             if candidate.exists():
@@ -159,7 +164,7 @@ class MakeVote(LoginRequiredMixin, View):
             except:
                 pass
             messages.error(request, "Une erreur est survenue, veuillez ressayer!")
-        return redirect("vote:home")
+        return HttpResponseRedirect(url)
 
 # --------------- Manage Votes ---------------
 class Manage(LoginRequiredMixin, View):
@@ -229,6 +234,10 @@ class TransferVote(LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         user = request.user
+        page = request.POST.get('page' or None)
+        url = reverse("vote:votes_management")
+        if page is not None:
+            url += f"?page={page}"
         if not user.is_superuser and user.is_staff:
             pending_id = request.POST.get('pending_id')
             pending = Pending.objects.filter(pk=pending_id)
@@ -237,11 +246,11 @@ class TransferVote(LoginRequiredMixin, View):
                 voter = utils.decrypt_pending(pending)
                 if voter is not None:
                     messages.success(request, "Le vote est marqué avec succé!")
-                    return redirect("vote:votes_management")
+                    return HttpResponseRedirect(url)
                 messages.error(request, "Le vote est non valide!")
-                return redirect("vote:votes_management")
+                return HttpResponseRedirect(url)
             messages.error(request, "Vote inexistant!")
-            return redirect("vote:votes_management")
+            return HttpResponseRedirect(url)
         messages.info(request, "Vous n'êtes pas membre du centre de comptage!")
         return redirect("vote:home")
 
@@ -254,6 +263,10 @@ class VotesRevision(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         context = dict()
         user = request.user
+        page = request.POST.get('page' or None)
+        url = reverse("vote:votes_revision")
+        if page is not None:
+            url += f"?page={page}"
         if user.is_superuser:
             search = request.GET.get("search" or None)
             if search is not None:
@@ -285,6 +298,10 @@ class DecideVote(LoginRequiredMixin, View):
 
     def post(self, request, *args, **kwargs):
         user = request.user
+        page = request.POST.get('page' or None)
+        url = reverse("vote:votes_revision")
+        if page is not None:
+            url += f"?page={page}"
         if user.is_superuser:
             revision_id = request.POST.get('revision_id')
             revision = Revision.objects.filter(pk=revision_id)
@@ -293,11 +310,11 @@ class DecideVote(LoginRequiredMixin, View):
                 voter = utils.decrypt_revision(revision)
                 if voter is not None:
                     messages.success(request, "Le vote est marqué avec succé!")
-                    return redirect("vote:votes_revision")
+                    return HttpResponseRedirect(url)
                 messages.error(request, "Le vote est non valide!")
-                return redirect("vote:votes_revision")
+                return HttpResponseRedirect(url)
             messages.error(request, "Vote inexistant!")
-            return redirect("vote:votes_revision")
+            return HttpResponseRedirect(url)
         messages.info(request, "Vous n'êtes pas membre du centre de dépouillement!")
         return redirect("vote:home")
 

@@ -21,7 +21,6 @@ def generate_keys(voter):
         file = open(os.path.join(BASE_DIR) + "/media/keys/" + voter.user.username + "_public_key.pem", "rb")
         keys_generated = True
     except Exception as ex:
-        print(ex)
         pass
 
     if not keys_generated:
@@ -110,11 +109,12 @@ def encrypt_data(voter, candidate):
 
     # Open public(For CO) file if exists or create it(all content will be overwritten)
     # Encrypt data with CO public key (Decryption only with CO private key)
-    co_file = open(os.path.join(BASE_DIR) + "/media/" + "data_pub.encrypt", "wb+")
+
+    co_file = open(os.path.join(BASE_DIR) + "/media/" + "co_data_pub.encrypt", "wb+")
 
     # Open public(for DO) file if exists or create it(all content will be overwritten)
     # Encrypt data with DO public key (Decryption only with DO private key)
-    do_file = open(os.path.join(BASE_DIR) + "/media/" + "data_pub.encrypt", "wb+")
+    do_file = open(os.path.join(BASE_DIR) + "/media/" + "do_data_pub.encrypt", "wb+")
 
     # Encrypt voter id  using his private key
     # Decryption will be with the voter public key(Access allowed to all authorities)
@@ -124,8 +124,8 @@ def encrypt_data(voter, candidate):
     co_voter_identifier_ciphertext = co_public_key.encrypt(
         voter_identifier_message,
         padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
+            mgf=padding.MGF1(algorithm=hashes.SHA512()),
+            algorithm=hashes.SHA512(),
             label=None
         )
     )
@@ -134,8 +134,8 @@ def encrypt_data(voter, candidate):
     do_voter_identifier_ciphertext = co_public_key.encrypt(
         voter_identifier_message,
         padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
+            mgf=padding.MGF1(algorithm=hashes.SHA512()),
+            algorithm=hashes.SHA512(),
             label=None
         )
     )
@@ -145,8 +145,8 @@ def encrypt_data(voter, candidate):
     voting_bulletin_ciphertext = do_public_key.encrypt(
         voting_bulletin_message,
         padding.OAEP(
-            mgf=padding.MGF1(algorithm=hashes.SHA256()),
-            algorithm=hashes.SHA256(),
+            mgf=padding.MGF1(algorithm=hashes.SHA512()),
+            algorithm=hashes.SHA512(),
             label=None
         )
     )
@@ -160,15 +160,17 @@ def encrypt_data(voter, candidate):
     do_file.write(str.encode("\n"))
     do_file.write(str.encode(str(voting_bulletin_ciphertext)))
 
+    print(f"Bulletin length: {len(str.encode(str(voting_bulletin_ciphertext)))}")
+
     # Sign the message with voter private key
     message = str.encode(f"Message: {voter} | time: {time.time()}")
     signature = voter_private_key.sign(
         message,
         padding.PSS(
-            mgf=padding.MGF1(hashes.SHA256()),
+            mgf=padding.MGF1(hashes.SHA512()),
             salt_length=padding.PSS.MAX_LENGTH
         ),
-        hashes.SHA256()
+        hashes.SHA512()
     )
 
     # Create a new signature
@@ -199,10 +201,10 @@ def verify_signature(signature):
             signature.sig,
             signature.message,
             padding.PSS(
-                mgf=padding.MGF1(hashes.SHA256()),
+                mgf=padding.MGF1(hashes.SHA512()),
                 salt_length=padding.PSS.MAX_LENGTH
             ),
-            hashes.SHA256()
+            hashes.SHA512()
         )
         # Validate signature after verification
         signature.is_valid = True
@@ -254,8 +256,8 @@ def decrypt_pending(pending):
         voter_id = co_private_key.decrypt(
             voter_id_ciphertext,
             padding.OAEP(
-                mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                algorithm=hashes.SHA256(),
+                mgf=padding.MGF1(algorithm=hashes.SHA512()),
+                algorithm=hashes.SHA512(),
                 label=None
             )
         )
@@ -274,10 +276,10 @@ def decrypt_pending(pending):
         signature = co_private_key.sign(
             message,
             padding.PSS(
-                mgf=padding.MGF1(hashes.SHA256()),
+                mgf=padding.MGF1(hashes.SHA512()),
                 salt_length=padding.PSS.MAX_LENGTH
             ),
-            hashes.SHA256()
+            hashes.SHA512()
         )
 
         # Encrypt voter identity and encrypted bulletin
@@ -286,16 +288,16 @@ def decrypt_pending(pending):
         voter_identifier_ciphertext = co_public_key.encrypt(
             voter_identifier_message,
             padding.OAEP(
-                mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                algorithm=hashes.SHA256(),
+                mgf=padding.MGF1(algorithm=hashes.SHA512()),
+                algorithm=hashes.SHA512(),
                 label=None
             )
         )
         # candidate_identifier_ciphertext_cipher = do_public_key.encrypt(
         #     candidate_id_ciphertext,
         #     padding.OAEP(
-        #         mgf=padding.MGF1(algorithm=hashes.SHA256()),
-        #         algorithm=hashes.SHA256(),
+        #         mgf=padding.MGF1(algorithm=hashes.SHA512()),
+        #         algorithm=hashes.SHA512(),
         #         label=None
         #     )
         # )
@@ -372,15 +374,19 @@ def decrypt_revision(revision):
         do_file = open(revision.do_file.path, "rb")
         # No access to voter id because it's encrypted with CO public key
         voter_id_from_voter_ciphertext = do_file.readline().decode('unicode-escape').strip()[2:-1].encode('ISO-8859-1')
-        candidate_id_from_voter_ciphertext = do_file.readline().decode('unicode-escape').strip()[2:-1].encode(
-            'ISO-8859-1')
+        candidate_id_from_voter_ciphertext = do_file.readline().decode('unicode-escape').strip()[2:-1].encode('ISO-8859-1')
+
+        print(len(voter_id_from_co_ciphertext))
+        print(len(candidate_id_from_co_ciphertext))
+        print(len(voter_id_from_voter_ciphertext))
+        print(len(candidate_id_from_voter_ciphertext))
 
         # DO cannot have the access into voter id because it's encrypted with CO public key
         # voter_id = do_private_key.decrypt(
         #     voter_id_ciphertext,
         #     padding.OAEP(
-        #         mgf=padding.MGF1(algorithm=hashes.SHA256()),
-        #         algorithm=hashes.SHA256(),
+        #         mgf=padding.MGF1(algorithm=hashes.SHA512()),
+        #         algorithm=hashes.SHA512(),
         #         label=None
         #     )
         # )
@@ -389,8 +395,8 @@ def decrypt_revision(revision):
         candidate_id_from_co = do_private_key.decrypt(
             candidate_id_from_voter_ciphertext,
             padding.OAEP(
-                mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                algorithm=hashes.SHA256(),
+                mgf=padding.MGF1(algorithm=hashes.SHA512()),
+                algorithm=hashes.SHA512(),
                 label=None
             )
         )
@@ -399,8 +405,8 @@ def decrypt_revision(revision):
         candidate_id_from_voter = do_private_key.decrypt(
             candidate_id_from_co_ciphertext,
             padding.OAEP(
-                mgf=padding.MGF1(algorithm=hashes.SHA256()),
-                algorithm=hashes.SHA256(),
+                mgf=padding.MGF1(algorithm=hashes.SHA512()),
+                algorithm=hashes.SHA512(),
                 label=None
             )
         )

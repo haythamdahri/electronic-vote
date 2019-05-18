@@ -46,7 +46,7 @@
                     {% if revision.signature.is_valid is None %}
                         <form method="POST" action="{% url 'vote:verify_signature' %}">
                             {% csrf_token %}
-                            <input type="hidden" name="next" value="{% url 'vote:votes_revision' %}">
+                            <input type="hidden" name="next" value="{% url 'vote:votes_revision' %}{% if request.GET.page is not None %}?page={{ request.GET.page }}{% endif %}">
                             <input type="hidden" name="signature_id" value="{{ revision.signature.pk }}"/>
                             <button class="btn btn-success btn-sm"><i class="fas fa-person-booth"></i> Verifier la
                                 signature
@@ -59,6 +59,9 @@
                         <form method="POST" action="{% url 'vote:decide_revision' %}">
                             {% csrf_token %}
                             <input type="hidden" name="revision_id" value="{{ revision.pk }}"/>
+                            {% if request.GET.page is not None %}
+                                <input type="hidden" name="page" value="{{ request.GET.page }}" />
+                            {% endif %}
                             <button class="btn btn-success btn-sm"><i class="fas fa-person-booth"></i>
                                 <i class="fas fa-random"></i> Décrypter et traiter le vote
                             </button>
@@ -119,7 +122,7 @@
                     {% endif %}
                 {% endfor %}
 
-                {% if candidates.has_next %}
+                {% if revisions.has_next %}
                     <li class="page-item">
                         <a class="page-link" href="{% url 'vote:votes_revision' %}?page={{ revisions.next_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">Suivant</a>
                     </li>

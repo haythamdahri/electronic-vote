@@ -119,4 +119,4 @@ class Vote(models.Model):
     is_valid = models.BooleanField(default=False, null=True)
 
     def __str__(self):
-        return self.voter.public_key.name + " | " + self.candidate.user.username + " | " + str(self.vote_date)
+        return self.candidate.user.username + " | " + str(self.vote_date)
