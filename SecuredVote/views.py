@@ -15,7 +15,7 @@ from ElectronicVote.settings import BASE_DIR
 from SecuredVote import utils
 from SecuredVote.forms import LoginForm
 # --------------- Home ---------------
-from SecuredVote.models import Candidate, Vote, Voter, Pending, Signature
+from SecuredVote.models import Candidate, Vote, Voter, Pending, Signature, Revision
 
 
 class Home(View):
@@ -111,7 +111,7 @@ class MakeVote(LoginRequiredMixin, View):
         try:
             candidate = Candidate.objects.filter(id=request.POST.get("candidate_id"))
             if candidate.exists():
-                if not Vote.objects.filter(voter__user=request.user).exists() and Voter.objects.filter(user=request.user).exists() and not Voter.objects.get(user=request.user).is_voted:
+                if not Voter.objects.filter(user=request.user).exists() or (Voter.objects.filter(user=request.user).exists() and not Voter.objects.get(user=request.user).is_voted) :
                     candidate = candidate[0]
                     voter = Voter.objects.get_or_create(user=request.user)[0]
 
@@ -184,8 +184,11 @@ class Manage(LoginRequiredMixin, View):
             pendings = paginator.get_page(page)
             context["pendings"] = pendings
             return render(request, "vote/manage.html", context)
-        messages.info(request, "Vous êtes membre du centre de dépouillement!")
+        messages.info(request, "Vous n'êtes pas membre du centre de comptage!")
         return redirect("vote:home")
+
+    def post(self, request, *args, **kwargs):
+        return redirect("vote:votes_management")
 
 
 # --------------- Verify Signature Votes ---------------
@@ -194,25 +197,25 @@ class VerifySignature(LoginRequiredMixin, View):
     redirect_field_name = "next"
 
     def get(self, request, *args, **kwargs):
-        return redirect("vote:manage_votes")
+        return redirect("vote:votes_management")
 
     def post(self, request, *args, **kwargs):
         user = request.user
-        if not user.is_superuser and user.is_staff:
+        next = request.POST.get('next' or None)
+        if user.is_superuser or user.is_staff:
             signature_id = request.POST.get('signature_id' or None)
             if signature_id is not None:
                 signature = Signature.objects.filter(id=signature_id)
                 if signature.exists():
                     signature = signature[0]
-
                     # Verify signature using utils
                     if utils.verify_signature(signature):
                         messages.success(request, "Signature est verifié avec succé")
-                        return redirect("vote:manage_votes")
+                        return redirect(next)
 
             messages.error(request, "Signature non valide!")
-            return redirect("vote:manage_votes")
-        messages.info(request, "Vous êtes membre du centre de dépouillement!")
+            return redirect(next)
+        messages.info(request, "Vous n'avez pas le droit de verifier la signature")
         return redirect("vote:home")
 
 
@@ -222,7 +225,7 @@ class TransferVote(LoginRequiredMixin, View):
     redirect_field_name = "next"
 
     def get(self, request, *args, **kwargs):
-        return redirect("vote:manage_votes")
+        return redirect("vote:votes_management")
 
     def post(self, request, *args, **kwargs):
         user = request.user
@@ -234,15 +237,69 @@ class TransferVote(LoginRequiredMixin, View):
                 voter = utils.decrypt_pending(pending)
                 if voter is not None:
                     messages.success(request, "Le vote est marqué avec succé!")
-                    return redirect("vote:manage_votes")
+                    return redirect("vote:votes_management")
                 messages.error(request, "Le vote est non valide!")
-                return redirect("vote:manage_votes")
+                return redirect("vote:votes_management")
             messages.error(request, "Vote inexistant!")
-            return redirect("vote:manage_votes")
-        messages.info(request, "Vous êtes membre du centre de dépouillement!")
+            return redirect("vote:votes_management")
+        messages.info(request, "Vous n'êtes pas membre du centre de comptage!")
         return redirect("vote:home")
 
 
+# --------------- Vote: Final check and decision ---------------
+class VotesRevision(LoginRequiredMixin, View):
+    login_url = "/login/"
+    redirect_field_name = "next"
+
+    def get(self, request, *args, **kwargs):
+        context = dict()
+        user = request.user
+        if user.is_superuser:
+            search = request.GET.get("search" or None)
+            if search is not None:
+                try:
+                    revisions = Revision.objects.filter(id=search)
+                except:
+                    revisions = []
+            else:
+                revisions = Revision.objects.all()
+            # Pagination
+            paginator = Paginator(revisions, 2)  # Show 2 pending votes per page
+            page = request.GET.get("page")
+            revisions = paginator.get_page(page)
+            context["revisions"] = revisions
+            return render(request, "vote/revisions.html", context)
+        messages.info(request, "Vous n'êtes pas membre du centre de dépouillement!")
+        return redirect("vote:home")
+
+    def post(self, request, *args, **kwargs):
+        return redirect("vote:votes_revision")
+
+# --------------- Decide vote and update counter ---------------
+class DecideVote(LoginRequiredMixin, View):
+    login_url = "/login/"
+    redirect_field_name = "next"
+
+    def get(self, request, *args, **kwargs):
+        return redirect("vote:votes_management")
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        if user.is_superuser:
+            revision_id = request.POST.get('revision_id')
+            revision = Revision.objects.filter(pk=revision_id)
+            if revision.exists():
+                revision = revision[0]
+                voter = utils.decrypt_revision(revision)
+                if voter is not None:
+                    messages.success(request, "Le vote est marqué avec succé!")
+                    return redirect("vote:votes_revision")
+                messages.error(request, "Le vote est non valide!")
+                return redirect("vote:votes_revision")
+            messages.error(request, "Vote inexistant!")
+            return redirect("vote:votes_revision")
+        messages.info(request, "Vous n'êtes pas membre du centre de dépouillement!")
+        return redirect("vote:home")
 
 
 

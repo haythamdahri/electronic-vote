@@ -62,8 +62,7 @@
                     </li>
                     <li class="page-item">
                         <a class="page-link"
-                           href="{% url 'vote:home' %}?page=
-                                   {{ candidates.previous_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}"
+                           href="{% url 'vote:home' %}?page={{ candidates.previous_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}"
                            tabindex="-1" aria-disabled="true">Précedent</a>
                     </li>
                 {% else %}
@@ -85,20 +84,17 @@
                         </li>
                     {% else %}
                         <li class="page-item"><a class="page-link"
-                                                 href="{% url 'vote:home' %}?page=
-                                                         {{ page_num }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">{{ page_num }}</a>
+                                                 href="{% url 'vote:home' %}?page={{ page_num }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">{{ page_num }}</a>
                         </li>
                     {% endif %}
                 {% endfor %}
 
                 {% if candidates.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="{% url 'vote:home' %}?page=
-                                {{ candidates.next_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">Suivant</a>
+                        <a class="page-link" href="{% url 'vote:home' %}?page={{ candidates.next_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">Suivant</a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="{% url 'vote:home' %}?page=
-                                {{ candidates.paginator.num_pages }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">>></a>
+                        <a class="page-link" href="{% url 'vote:home' %}?page={{ candidates.paginator.num_pages }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">>></a>
                     </li>
                 {% else %}
                     <li class="page-item disabled">

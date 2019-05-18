@@ -10,7 +10,9 @@ urlpatterns = [
     path('logout/', views.Logout.as_view(), name="logout"),
     path('profile/', views.Profile.as_view(), name="profile"),
     path('vote/', views.MakeVote.as_view(), name="make_vote"),
-    path('manage/', views.Manage.as_view(), name="manage_votes"),
+    path('manage/', views.Manage.as_view(), name="votes_management"),
     path('verify-signature/', views.VerifySignature.as_view(), name="verify_signature"),
     path('transfer-vote/', views.TransferVote.as_view(), name="decrypt_vote"),
+    path('revision/', views.VotesRevision.as_view(), name="votes_revision"),
+    path('decide-revision/', views.DecideVote.as_view(), name="decide_revision"),
 ]

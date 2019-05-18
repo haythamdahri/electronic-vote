@@ -54,8 +54,8 @@ message = b'encrypt me!'
 encrypted = public_key.encrypt(
     message,
     padding.OAEP(
-        mgf=padding.MGF1(algorithm=hashes.SHA256()),
-        algorithm=hashes.SHA256(),
+        mgf=padding.MGF1(algorithm=hashes.SHA512()),
+        algorithm=hashes.SHA512(),
         label=None
     )
 )
@@ -63,8 +63,8 @@ encrypted = public_key.encrypt(
 original_message = private_key.decrypt(
     encrypted,
     padding.OAEP(
-        mgf=padding.MGF1(algorithm=hashes.SHA256()),
-        algorithm=hashes.SHA256(),
+        mgf=padding.MGF1(algorithm=hashes.SHA512()),
+        algorithm=hashes.SHA512(),
         label=None
     )
 )
@@ -76,15 +76,15 @@ print(f"message == original_message ? {message == original_message}")
 
 message = b"A message I want to sign"
 signature = private_key.sign(message, padding.PSS(
-    mgf=padding.MGF1(hashes.SHA256()),
+    mgf=padding.MGF1(hashes.SHA512()),
     salt_length=padding.PSS.MAX_LENGTH
-), hashes.SHA256())
+), hashes.SHA512())
 
 # Veifying signature
 try:
     public_key.verify(signature, message,
-                      padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
-                      hashes.SHA256()
+                      padding.PSS(mgf=padding.MGF1(hashes.SHA512()), salt_length=padding.PSS.MAX_LENGTH),
+                      hashes.SHA512()
                       )
 except InvalidSignature as e:
     print(e)

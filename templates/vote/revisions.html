@@ -1,7 +1,7 @@
 {% extends 'vote/base.html' %}
 {% load staticfiles %}
 
-{% block title %}Gestion des votes{% endblock %}
+{% block title %}Revision des votes{% endblock %}
 
 
 {% block content %}
@@ -20,32 +20,34 @@
         </tr>
         </thead>
         <tbody>
-        {% for pending in pendings.object_list %}
+        {% for revision in revisions.object_list %}
             <tr align="center">
-                <th scope="row">{{ pending.pk }}</th>
-                <td>{{ pending.co_file.name }}</td>
-                <td>{{ pending.do_file.name }}</td>
+                <th scope="row">{{ revision.pk }}</th>
+                <td>{{ revision.pending.co_file.name }}</td>
+                <td>{{ revision.do_file.name }}</td>
                 <td>
-                    {% if pending.signature.is_valid is True %}
+                    {% if revision.signature.is_valid  %}
                         <i class="fas fa-clipboard-check" style="color: springgreen;"></i>
-                    {% elif not pending.signature.is_valid %}
+                    {% else %}
                         <i class="fas fa-spinner fa-spin"></i>
                     {% endif %}
                 </td>
-                <td>{{ pending.date }}</td>
+                <td>{{ revision.date }}</td>
                 <td>
 
-                    {% if pending.signature.is_valid %}
-                        <span class="badge badge-success">La signature est valide!</span>
-                    {% elif not pending.signature.is_valid and pending.signature.done %}
+                    {% if revision.signature.is_valid is False %}
                         <span class="badge badge-danger">La signature est non valide!</span>
                     {% endif %}
 
-                    {% if pending.signature.is_valid is None %}
+                    {% if revision.signature.is_valid is True %}
+                        <span class="badge badge-success">La signature est valide!</span>
+                    {% endif %}
+
+                    {% if revision.signature.is_valid is None %}
                         <form method="POST" action="{% url 'vote:verify_signature' %}">
                             {% csrf_token %}
-                            <input type="hidden" name="next" value="{% url 'vote:votes_management' %}">
-                            <input type="hidden" name="signature_id" value="{{ pending.signature.pk }}"/>
+                            <input type="hidden" name="next" value="{% url 'vote:votes_revision' %}">
+                            <input type="hidden" name="signature_id" value="{{ revision.signature.pk }}"/>
                             <button class="btn btn-success btn-sm"><i class="fas fa-person-booth"></i> Verifier la
                                 signature
                             </button>
@@ -53,46 +55,45 @@
                     {% endif %}
 
 
-                    {% if not pending.done and pending.signature.is_valid is not None %}
-                        <form method="POST" action="{% url 'vote:decrypt_vote' %}">
+                    {% if not revision.done and revision.signature.is_valid is not None %}
+                        <form method="POST" action="{% url 'vote:decide_revision' %}">
                             {% csrf_token %}
-                            <input type="hidden" name="pending_id" value="{{ pending.pk }}"/>
+                            <input type="hidden" name="revision_id" value="{{ revision.pk }}"/>
                             <button class="btn btn-success btn-sm"><i class="fas fa-person-booth"></i>
-                                <i class="fas fa-random"></i> Décrypter et transferer le vote
+                                <i class="fas fa-random"></i> Décrypter et traiter le vote
                             </button>
                         </form>
                     {% endif %}
 
-                    {% if pending.is_valid and pending.done %}
-                        <span class="badge badge-success">Le vote est marqué avec succé!</span>
-                    {% elif not pending.is_valid and pending.done %}
-                        <span class="badge badge-danger">Le vote est marqué non valide!</span>
+                    {% if not revision.is_valid is True and revision.done is True %}
+                        <span class="badge badge-danger">Le vote est refusé en tant qu'invalide!</span>
+                    {% elif revision.is_valid is True and revision.done is True  %}
+                        <span class="badge badge-success">Le vote est approuvé avec succé!</span>
                     {% endif %}
                 </td>
             </tr>
         {% empty %}
             <tr>
                 <td colspan="9" class="alert alert-warning text-center font-weight-bold">
-                    <i class="fas fa-info-circle"></i> Aucun vote n'a été ajouté!
+                    <i class="fas fa-info-circle"></i> Aucun vote n'a été ajouté pour la verificaton finale!
                 </td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
 
-    {% if pendings.has_other_pages %}
+    {% if revisions.has_other_pages %}
         <nav aria-label="...">
             <ul class="pagination justify-content-center">
-                {% if pendings.has_previous %}
+                {% if revisions.has_previous %}
                     <li class="page-item">
                         <a class="page-link"
-                           href="{% url 'vote:votes_management' %}?page=1{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}"
+                           href="{% url 'vote:votes_revision' %}?page=1{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}"
                            tabindex="-1" aria-disabled="true"><<</a>
                     </li>
                     <li class="page-item">
                         <a class="page-link"
-                           href="{% url 'vote:votes_management' %}?page=
-                                   {{ pendings.previous_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}"
+                           href="{% url 'vote:votes_revision' %}?page={{ revisions.previous_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}"
                            tabindex="-1" aria-disabled="true">Précedent</a>
                     </li>
                 {% else %}
@@ -104,30 +105,26 @@
                     </li>
                 {% endif %}
 
-                {% for page_num in pendings.paginator.page_range %}
-                    {% if pendings.number == page_num %}
+                {% for page_num in revisions.paginator.page_range %}
+                    {% if revisions.number == page_num %}
                         <li class="page-item active" aria-current="page">
                             <a class="page-link"
-                               href="{% url 'vote:votes_management' %}?page=
-                                       {{ page_num }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">{{ page_num }}
+                               href="{% url 'vote:votes_revision' %}?page={{ page_num }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">{{ page_num }}
                                 <span class="sr-only">(current)</span></a>
                         </li>
                     {% else %}
                         <li class="page-item"><a class="page-link"
-                                                 href="{% url 'vote:votes_management' %}?page=
-                                                         {{ page_num }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">{{ page_num }}</a>
+                                                 href="{% url 'vote:votes_revision' %}?page={{ page_num }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">{{ page_num }}</a>
                         </li>
                     {% endif %}
                 {% endfor %}
 
                 {% if candidates.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="{% url 'vote:votes_management' %}?page=
-                                {{ pendings.next_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">Suivant</a>
+                        <a class="page-link" href="{% url 'vote:votes_revision' %}?page={{ revisions.next_page_number }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">Suivant</a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="{% url 'vote:votes_management' %}?page=
-                                {{ pendings.paginator.num_pages }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">>></a>
+                        <a class="page-link" href="{% url 'vote:votes_revision' %}?page={{ revisions.paginator.num_pages }}{% if 'search' in request.GET %}&search={{ request.GET.search }}{% endif %}">>></a>
                     </li>
                 {% else %}
                     <li class="page-item disabled">
