@@ -85,21 +85,21 @@ class Pending(models.Model):
     # Sent to CO from the voter
     co_file = models.FileField(null=False)
     # Sent to DO from the voter
-    do_file = models.FileField(null=False, blank=True)
+    de_file = models.FileField(null=False, blank=True)
     date = models.DateTimeField(default=now)
     done = models.BooleanField(default=False, null=True, blank=True)
     is_valid = models.BooleanField(default=False, null=True, blank=True)
     signature = models.ForeignKey(Signature, on_delete=models.CASCADE)
 
     def __str__(self):
-        return "Co file: " + self.co_file.name + " | Do file: " + self.do_file.name + " | Date: " + self.date.__str__() \
+        return "Co file: " + self.co_file.name + " | Do file: " + self.de_file.name + " | Date: " + self.date.__str__() \
                + " | Done: " + str(self.done) + " | Signature: " + self.signature.__str__()
 
 
 class Revision(models.Model):
     pending = models.ForeignKey(Pending, on_delete=models.CASCADE)
     # Sent to DO from CO
-    do_file = models.FileField(null=False, blank=True)
+    de_file = models.FileField(null=False, blank=True)
     # The new encrypted file(Encrypted voter id + encrypted(encrypted bulettin))
     co_file = models.FileField(null=False, blank=True)
     date = models.DateTimeField(default=now)
@@ -108,7 +108,7 @@ class Revision(models.Model):
     is_valid = models.BooleanField(default=None, null=True, blank=True)
 
     def __str__(self):
-        return "Co file: " + self.do_file.name + " | Date: " + self.date.__str__() \
+        return "Co file: " + self.de_file.name + " | Date: " + self.date.__str__() \
                + " | Done: " + str(self.done)
 
 

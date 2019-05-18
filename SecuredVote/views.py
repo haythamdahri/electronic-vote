@@ -123,8 +123,8 @@ class MakeVote(LoginRequiredMixin, View):
                     # encrypt voter id with user private key
                     # encrypt candidate id (Bulletin du vote) with DE public key(Only DE who can decrypt Voting results)
                     # encrypt files with user private key
-                    # sign co_file and do_file for authentication
-                    co_file, do_file, signature = utils.encrypt_data(voter, candidate)
+                    # sign co_file and de_file for authentication
+                    co_file, de_file, signature = utils.encrypt_data(voter, candidate)
 
                     # Create a new pending vote even if the user has already voted
                     # The last vote is only the one which will be decrypted and used for operation process
@@ -133,15 +133,15 @@ class MakeVote(LoginRequiredMixin, View):
                     # Remove the file if exists to prevent space management problems
                     if os.path.exists(os.path.join(BASE_DIR) + "/media/" + voter.user.username + '_co_file.encrypt'):
                         os.remove(os.path.join(BASE_DIR) + "/media/" + voter.user.username + '_co_file.encrypt')
-                    if os.path.exists(os.path.join(BASE_DIR) + "/media/" + voter.user.username + '_do_file.encrypt'):
-                        os.remove(os.path.join(BASE_DIR) + "/media/" + voter.user.username + '_do_file.encrypt')
+                    if os.path.exists(os.path.join(BASE_DIR) + "/media/" + voter.user.username + '_de_file.encrypt'):
+                        os.remove(os.path.join(BASE_DIR) + "/media/" + voter.user.username + '_de_file.encrypt')
 
                     # Save co and do files on pending recored
                     # Set the associated signature
                     pending.co_file.save(voter.user.username + '_co_file.encrypt', File(co_file), save=True)
-                    pending.do_file.save(voter.user.username + '_do_file.encrypt', File(do_file), save=True)
+                    pending.de_file.save(voter.user.username + '_de_file.encrypt', File(de_file), save=True)
                     co_file.close()
-                    do_file.close()
+                    de_file.close()
                     pending.save()
 
                     # Park the voter as voted
@@ -160,8 +160,10 @@ class MakeVote(LoginRequiredMixin, View):
             print(ex)
             # Delete the lest created pending if exists
             try:
-                Pending.objects.last().delete()
-            except:
+                if Pending.objects.all().count() > 0:
+                    Pending.objects.last().delete()
+            except Exception as ex:
+                print(ex)
                 pass
             messages.error(request, "Une erreur est survenue, veuillez ressayer!")
         return HttpResponseRedirect(url)
