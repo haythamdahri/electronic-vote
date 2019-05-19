@@ -101,3 +101,19 @@ encrypted = b'data from encryption'
 f = open('test.encrypted', 'wb')
 f.write(encrypted)
 f.close()
+
+
+digest1 = hashes.Hash(hashes.SHA512(), backend=default_backend())
+digest1.update(b"HAYTHAM DAHRI")
+original_hashed_text = digest1.finalize()
+
+digest2 = hashes.Hash(hashes.SHA512(), backend=default_backend())
+digest2.update(b"HAYTHAM DAHRI")
+new_hashed_text = digest2.finalize()
+
+print(f"Original hashed text: {original_hashed_text}")
+print(f"New hash: {new_hashed_text}")
+
+print(original_hashed_text == new_hashed_text)
+
+
