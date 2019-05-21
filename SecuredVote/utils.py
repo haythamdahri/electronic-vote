@@ -5,6 +5,7 @@ import time
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
+from django.contrib.auth.models import User
 from django.core.files import File
 
 from ElectronicVote.settings import BASE_DIR

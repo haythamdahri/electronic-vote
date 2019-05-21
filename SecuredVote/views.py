@@ -11,14 +11,14 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
-
 from ElectronicVote.settings import BASE_DIR
 from SecuredVote import utils
 from SecuredVote.forms import LoginForm
-# --------------- Home ---------------
 from SecuredVote.models import Candidate, Vote, Voter, Pending, Signature, Revision
 
 
+
+# --------------- Home ---------------
 class Home(View):
 
     def get(self, request, *args, **kwargs):
@@ -34,7 +34,7 @@ class Home(View):
         candidates = candidates.annotate(count=Count("vote__id")).order_by("-count")
 
         # Pagination
-        paginator = Paginator(candidates, 2)  # Show 2 candidates per page (Temprory until having a good number of candidates)
+        paginator = Paginator(candidates, 100)  # Show 2 candidates per page (Temprory until having a good number of candidates)
         page = request.GET.get("page")
         candidates = paginator.get_page(page)
         context["candidates"] = candidates
@@ -186,7 +186,7 @@ class Manage(LoginRequiredMixin, View):
             else:
                 pendings = Pending.objects.all()
             # Pagination
-            paginator = Paginator(pendings, 2)  # Show 2 pending votes per page
+            paginator = Paginator(pendings, 100)  # Show 2 pending votes per page
             page = request.GET.get("page")
             pendings = paginator.get_page(page)
             context["pendings"] = pendings
@@ -279,7 +279,7 @@ class VotesRevision(LoginRequiredMixin, View):
             else:
                 revisions = Revision.objects.all()
             # Pagination
-            paginator = Paginator(revisions, 2)  # Show 2 pending votes per page
+            paginator = Paginator(revisions, 100)  # Show 2 pending votes per page
             page = request.GET.get("page")
             revisions = paginator.get_page(page)
             context["revisions"] = revisions
