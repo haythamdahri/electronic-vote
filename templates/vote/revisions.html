@@ -29,18 +29,16 @@
                 <td>
                     {% if revision.signature.is_valid  %}
                         <i class="fas fa-clipboard-check" style="color: springgreen;"></i>
-                    {% else %}
+                    {% elif not revision.signature.is_valid %}
                         <i class="fas fa-spinner fa-spin"></i>
                     {% endif %}
                 </td>
                 <td>{{ revision.date }}</td>
                 <td>
 
-                    {% if revision.signature.is_valid is False %}
+                    {% if not revision.signature.is_valid and revision.signature.is_valid is not None %}
                         <span class="badge badge-danger">La signature est non valide!</span>
-                    {% endif %}
-
-                    {% if revision.signature.is_valid is True %}
+                    {% elif revision.signature.is_valid and revision.signature.is_valid is not None %}
                         <span class="badge badge-success">La signature est valide!</span>
                     {% endif %}
 
@@ -56,7 +54,7 @@
                     {% endif %}
 
 
-                    {% if not revision.done and revision.signature.is_valid is not None %}
+                    {% if not revision.done and revision.signature.is_valid %}
                         <form method="POST" action="{% url 'vote:decide_revision' %}">
                             {% csrf_token %}
                             <input type="hidden" name="revision_id" value="{{ revision.pk }}"/>
@@ -69,10 +67,10 @@
                         </form>
                     {% endif %}
 
-                    {% if not revision.is_valid is True and revision.done is True %}
-                        <span class="badge badge-danger">Le vote est refusé en tant qu'invalide!</span>
-                    {% elif revision.is_valid is True and revision.done is True  %}
+                    {% if revision.is_valid and revision.done %}
                         <span class="badge badge-success">Le vote est approuvé avec succé!</span>
+                    {% elif not revision.is_valid and revision.done %}
+                        <span class="badge badge-danger">Le vote est refusé en tant qu'invalide!</span>
                     {% endif %}
                 </td>
             </tr>

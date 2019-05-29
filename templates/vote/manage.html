@@ -38,7 +38,7 @@
 
                     {% if pending.signature.is_valid %}
                         <span class="badge badge-success">La signature est valide!</span>
-                    {% elif not pending.signature.is_valid and pending.signature.done %}
+                    {% elif not pending.signature.is_valid and pending.signature.is_valid is not None %}
                         <span class="badge badge-danger">La signature est non valide!</span>
                     {% endif %}
 
@@ -54,7 +54,7 @@
                     {% endif %}
 
 
-                    {% if not pending.done and pending.signature.is_valid is not None %}
+                    {% if not pending.done and pending.signature.is_valid %}
                         <form method="POST" action="{% url 'vote:decrypt_vote' %}">
                             {% csrf_token %}
                             <input type="hidden" name="pending_id" value="{{ pending.pk }}"/>

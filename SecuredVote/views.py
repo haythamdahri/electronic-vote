@@ -25,6 +25,7 @@ class Home(View):
         context = dict()
         search = request.GET.get("search" or None)
         if search is not None:
+            search = search.strip()
             candidates = Candidate.objects.filter(
                 Q(user__first_name__contains=search) | Q(user__last_name__contains=search) |
                 Q(user__username__contains=search) | Q(user__email__contains=search)
@@ -179,6 +180,7 @@ class Manage(LoginRequiredMixin, View):
         if not user.is_superuser and user.is_staff:
             search = request.GET.get("search" or None)
             if search is not None:
+                search = search.strip()
                 try:
                     pendings = Pending.objects.filter(id=search)
                 except:
@@ -272,6 +274,7 @@ class VotesRevision(LoginRequiredMixin, View):
         if user.is_superuser:
             search = request.GET.get("search" or None)
             if search is not None:
+                search = search.strip()
                 try:
                     revisions = Revision.objects.filter(id=search)
                 except:

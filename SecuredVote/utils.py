@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django.core.files import File
 
 from ElectronicVote.settings import BASE_DIR
-from SecuredVote.models import Signature, Revision, Voter, Candidate, Vote
+from SecuredVote.models import Signature, Revision, Voter, Candidate, Vote, Pending
 
 
 def generate_keys(voter):
@@ -117,10 +117,9 @@ def encrypt_data(voter, candidate):
     # Encrypt data with DO public key (Decryption only with DO private key)
     de_file = open(os.path.join(BASE_DIR) + "/media/" + "de_data_pub.encrypt", "wb+")
 
-    # Encrypt voter id  using his private key
-    # Decryption will be with the voter public key(Access allowed to all authorities)
     # voter_identifier_message is voter id
     # voting_bulletin_message is candidate id
+    # Encrypt voter id with co public key (decryption with co private key)
     voter_identifier_message = str.encode(str(voter.id))
     co_voter_identifier_ciphertext = co_public_key.encrypt(
         voter_identifier_message,
@@ -232,6 +231,18 @@ def verify_signature(signature):
     except Exception as e:
         signature.is_valid = False
         signature.save()
+        pending = Pending.objects.filter(signature=signature)
+        revision = Revision.objects.filter(signature=signature)
+        if pending.exists():
+            pending = pending[0]
+            pending.done = True
+            pending.is_valid = False
+            pending.save()
+        else:
+            revision = revision[0]
+            revision.done = True
+            revision.is_valid = False
+            revision.save()
         return False
 
 
