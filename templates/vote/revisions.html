@@ -29,8 +29,10 @@
                 <td>
                     {% if revision.signature.is_valid  %}
                         <i class="fas fa-clipboard-check" style="color: springgreen;"></i>
-                    {% elif not revision.signature.is_valid %}
+                    {% elif revision.signature.is_valid is None %}
                         <i class="fas fa-spinner fa-spin"></i>
+                    {% else %}
+                        <i class="fas fa-exclamation-triangle" style="color: red;"></i>
                     {% endif %}
                 </td>
                 <td>{{ revision.date }}</td>

@@ -29,8 +29,10 @@
                 <td>
                     {% if pending.signature.is_valid is True %}
                         <i class="fas fa-clipboard-check" style="color: springgreen;"></i>
-                    {% elif not pending.signature.is_valid %}
+                    {% elif pending.signature.is_valid is None %}
                         <i class="fas fa-spinner fa-spin"></i>
+                    {% else %}
+                        <i class="fas fa-exclamation-triangle" style="color: red;"></i>
                     {% endif %}
                 </td>
                 <td>{{ pending.date }}</td>
